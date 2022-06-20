@@ -30,6 +30,7 @@ import {
   VagaboundCharacterRoning,
   VagaboundCharactecHarier,
 } from './config/config_fractions';
+import { Button } from '@mui/material';
 
 function App() {
   const allVagabounds = [
@@ -185,6 +186,9 @@ function App() {
             addPlayer={() => deleteAvailablePlayers(player)}
           />
         ))}
+        <Button variant="contained" color="success">
+          Start!
+        </Button>
       </div>
       <div clasName="ActualGame">
         <h1>Aktualne gry:</h1>
