@@ -1,0 +1,1 @@
+TIMEOUT_DELAY = 1000; //in ms
