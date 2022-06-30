@@ -4,16 +4,14 @@ import FractionButton from './components/fractionButton';
 import VagaboundPerson from './components/vagaboundPerson';
 import PlayerField from './components/playerField';
 import MapButton from './components/maps';
-import TextField from '@mui/material/TextField';
 import PlayerButton from './components/playerButton';
+import DenseTable from './components/tableContent';
+import ReplayIcon from '@mui/icons-material/Replay';
 
 import {
   RootBasicFractions,
   RootRiverFolkFractions,
   RootDuchyFractions,
-  RootBasicFractionNames,
-  RootDuchyFractionNames,
-  RootRiverFolfFractionNames,
   RootMapForest,
   RootMapLake,
   RootMapMountain,
@@ -29,6 +27,7 @@ import {
   VagaboundCharacterAdventuer,
   VagaboundCharacterRoning,
   VagaboundCharactecHarier,
+  PlayerRange,
 } from './config/config_fractions';
 import { Button } from '@mui/material';
 
@@ -45,12 +44,32 @@ function App() {
     VagaboundCharactecHarier,
   ];
 
-  const [availableFractions, setAvailableFractions] = React.useState({});
-  const [availableMaps, setAvailableMaps] = React.useState([]);
-  const [availableDeck, setAvailableDecks] = React.useState([]);
+  const [availableFractions, setAvailableFractions] =
+    React.useState(RootBasicFractions);
+  const [availableMaps, setAvailableMaps] = React.useState(['Forest']);
+  const [availableDeck, setAvailableDecks] = React.useState(['Podstawa']);
   const [availableVagabounds, setAvailableVagabound] =
     React.useState(allVagabounds);
-  const [availablePlayers, setAvailablePlayers] = React.useState([]);
+  const [availablePlayers, setAvailablePlayers] = React.useState([1, 2, 3]);
+  const [isGameReady, setIsGameReady] = React.useState(false);
+
+  const [randomMap, setRandomMap] = React.useState(null);
+  const [randomDeck, setRandomDeck] = React.useState(null);
+  const [players, setPlayers] = React.useState(null);
+
+  React.useEffect(() => {
+    console.log(isGameReady);
+
+    // if (isGameReady) {
+    // setIsGameReady(false);
+    // }
+    console.log(randomMap);
+    if (players) {
+      setPlayers([]);
+    }
+    // setRandomMap([]);
+    // setPlayers([]);
+  });
 
   function manageAvailableFractions(fractions) {
     if (Object.keys(fractions)[0] in availableFractions) {
@@ -110,6 +129,102 @@ function App() {
     } else {
       setAvailablePlayers([...availablePlayers, player]);
     }
+  }
+
+  function clearPlayers() {
+    setAvailablePlayers([]);
+  }
+
+  function assigneFractionToPlayer(lenghtFractions) {
+    let PlayerRangeValue = PlayerRange[availablePlayers.length];
+    let tempPlayerRangeValue = PlayerRangeValue;
+    let numberOfTries = 0;
+
+    while (numberOfTries < 100) {
+      let tempAvailableFractions = Object.assign({}, availableFractions);
+      let FractionAndPlayer = {};
+      let tempLenght = lenghtFractions;
+      numberOfTries++;
+      for (const player of availablePlayers) {
+        let random_fraction = recursiveRandomVg(
+          tempAvailableFractions,
+          tempLenght
+        );
+        let range_fraction = tempAvailableFractions[random_fraction];
+        tempPlayerRangeValue -= range_fraction;
+
+        FractionAndPlayer[player] = random_fraction;
+        tempLenght -= 1;
+        delete tempAvailableFractions[random_fraction];
+      }
+
+      if (tempPlayerRangeValue <= 0) {
+        return assigneVagaboundType(FractionAndPlayer);
+      } else {
+        tempPlayerRangeValue = PlayerRangeValue;
+        FractionAndPlayer = {};
+      }
+    }
+  }
+
+  function recursiveRandomVg(tempAvailableFractions, tempLenght) {
+    let randomFraction = Object.keys(tempAvailableFractions)[
+      Math.floor(Math.random() * tempLenght)
+    ];
+    if (randomFraction.includes('Vagab') && availableVagabounds.length == 0) {
+      return recursiveRandomVg(tempAvailableFractions, tempLenght);
+    }
+    return randomFraction;
+  }
+
+  // function assig
+
+  function assigneVagaboundType(playerAndFractions) {
+    for (const vagabound of Object.keys(playerAndFractions)) {
+      if (playerAndFractions[vagabound].includes('Vaga')) {
+        let vagaboundType =
+          availableVagabounds[
+            Math.floor(Math.random() * availableVagabounds.length)
+          ];
+        delete availableVagabounds[vagaboundType];
+
+        let vaga = playerAndFractions[vagabound] + ' ' + vagaboundType;
+        playerAndFractions[vagabound] = vaga;
+      }
+    }
+    return playerAndFractions;
+  }
+
+  function setupGame() {
+    let lenghtFractions = Object.keys(availableFractions).length;
+    if (availableMaps.length == 0) {
+      alert('Prosze wybierz na jakich mapach chcesz grać');
+      return;
+    }
+    if (lenghtFractions == 0) {
+      alert(
+        'Prosze wybierz na jakich dodatkach i czy na podstawie chcesz grać'
+      );
+      return;
+    }
+    if (availableDeck.length == 0) {
+      alert('Prosze wybierz na jakich deckach chcesz grać');
+      return;
+    }
+    if (lenghtFractions < availablePlayers.length) {
+      alert('Wybrano za mało frakcji dla takiej ilości graczy');
+      return;
+    }
+    // clearPlayers();
+    let playerAndFraction = assigneFractionToPlayer(lenghtFractions);
+    let randomMap =
+      availableMaps[Math.floor(Math.random() * availableMaps.length)];
+    let randomDeck =
+      availableDeck[Math.floor(Math.random() * availableDeck.length)];
+    setRandomDeck(randomDeck);
+    setRandomMap(randomMap);
+    setPlayers(playerAndFraction);
+    setIsGameReady(true);
   }
 
   return (
@@ -186,21 +301,23 @@ function App() {
             addPlayer={() => deleteAvailablePlayers(player)}
           />
         ))}
-        <Button variant="contained" color="success">
+        <Button variant="contained" color="success" onClick={() => setupGame()}>
           Start!
         </Button>
       </div>
       <div clasName="ActualGame">
         <h1>Aktualne gry:</h1>
+        {isGameReady ? (
+          <DenseTable map={randomMap} deck={randomDeck} players={players} />
+        ) : null}{' '}
+        {isGameReady ? (
+          <Button
+            variant="contained"
+            startIcon={<ReplayIcon />}
+            onClick={() => setupGame()}
+          />
+        ) : null}{' '}
       </div>
-      {JSON.stringify(availableFractions)}
-      {JSON.stringify(availableMaps)}
-      {JSON.stringify(availableDeck)}
-      {JSON.stringify(availableVagabounds)}
-      {JSON.stringify(availablePlayers)}
-
-      <div clasName="Stats"></div>
-      <div className="Current-Games"></div>
     </div>
   );
 }
